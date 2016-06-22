@@ -6,7 +6,7 @@ import yaml
 
 class CwlTool:
 
-    def __init__(self, id="", author="", version="cwl:draft-3", description="", label=""):
+    def __init__(self, id="", author="", version="cwl:draft-2", description="", label=""):
         self.id = id
         self.author = author
         self.version = version
@@ -24,22 +24,27 @@ class CwlTool:
         self.hints = []
         return
 
-    def add_input(self, id, required=True, label="", description="", type=["null", "File"], prefix="", cmdInclude=True, separate=True, position=0):
+    def add_input(self, id, required=True, label="", description="", type="File", prefix="", cmdInclude=True, separate=True, position=0):
         new_input = {"id": id}
         new_input["label"] = label
         new_input["description"] = description
         new_input["type"] = type
         new_input["inputBinding"] = {"prefix": prefix, "sbg:cmdInclude": cmdInclude, "separate": str(separate).lower(), "position": position}
-        new_input["required"] = str(required).lower()
+        if required:
+            new_input["type"] = type
+        else:
+            new_input["type"] = str("null" + " " + type).split()
         self.inputs.append(new_input.copy())
 
     def add_output(self, id, required=True, label="", description="", type="File", glob=""):
         new_output = {"id": id}
         new_output["label"] = label
         new_output["description"] = description
-        new_output["type"] = str("null" + " " + type).split()
-        new_output["outputBinding"] = {'glob': glob} # how to set glob attrs?
-        new_output["required"] = str(required).lower()
+        new_output["outputBinding"] = {'glob': glob}
+        if required:
+            new_output["type"] = type
+        else:
+            new_output["type"] = str("null" + " " + type).split()
         self.outputs.append(new_output.copy())
 
     def add_argument(self, prefix="", order=0, separate=True):
@@ -63,7 +68,7 @@ class CwlTool:
         self.hints.append(mem.copy())
 
     def add_aws_instance(self, value):
-        aws = {"class": "sbgAWSInstanceType", "value": value}
+        aws = {"class": "sbg:AWSInstanceType", "value": value}
         self.hints.append(aws.copy())
 
     def add_computational_requirements(self, cpu=1, mem=1000, aws=None):
@@ -85,14 +90,35 @@ class CwlInput:
         self.required = required
         self.label = label
         self.description = description
-        self.type = str("null" + "" + type).split()
+        if required:
+            self.type = type
+        else:
+            self.type = str("null" + " " + type).split()
 
-    def add_input_binding(self, prefix="", cmdInclude=True, separate=True, position=0):
+    def create_input_binding(self, prefix="", cmdInclude=True, separate=True, position=0):
         self.inputBinding = Bindings()
         self.inputBinding.prefix = prefix
         self.inputBinding.sbg_cmdInclude = cmdInclude
-        self.inputBinding.separate = str(separate).lower()
+        self.inputBinding.separate = separate
         self.inputBinding.position = position
+
+
+class CwlOutput:
+
+    def __init__(self, id, required=True, label="", description="", type="File", glob=""):
+        self.id = id
+        self.required = required
+        self.label = label
+        self.description = description
+        self.type = str(type)
+
+    def create_output_binding(self, prefix="", cmdInclude=True, separate=True, position=0, glob=""):
+        self.outputBinding = Bindings()
+        self.outputBinding.prefix = prefix
+        self.outputBinding.sbg_cmdInclude = cmdInclude
+        self.outputBinding.separate = separate
+        self.outputBinding.position = position
+        self.outputBinding.glob = glob
 
 class Bindings(): pass # can use to allow sub-attributes to an attribute
 
@@ -103,6 +129,7 @@ if __name__ == "__main__":
     tool.add_docker("ubuntu:latest")
     tool.add_computational_requirements(aws="c3.xlarge")
     tool.add_argument("-t", 1, False)
+
     print(tool.object2json())
     # To run: python py2cwl.py | json_reformat
 
