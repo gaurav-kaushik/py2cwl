@@ -80,11 +80,19 @@ class CwlTool:
     def object2json(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
+    def object2input(self, inputObject):
+        self.inputs.append(inputObject.__dict__)
+        return
+
+    def object2output(self, outputObject):
+        self.outputs.append(outputObject.__dict__)
+        return
+
     # def pretty_print_json(self):
     #     print(json.dumps(self.object2json(), sort_keys=True, indent=4, separators=(',', ': ')))
 
 class CwlInput:
-
+    """ CWL Input Port """
     def __init__(self, id, required=True, label="", description="", type="File", prefix="", cmdInclude=True, separate=True, position=0):
         self.id = id
         self.required = required
@@ -102,9 +110,8 @@ class CwlInput:
         self.inputBinding.separate = separate
         self.inputBinding.position = position
 
-
 class CwlOutput:
-
+    """ CWL Output Port """
     def __init__(self, id, required=True, label="", description="", type="File", glob=""):
         self.id = id
         self.required = required
@@ -114,20 +121,26 @@ class CwlOutput:
 
     def create_output_binding(self, prefix="", cmdInclude=True, separate=True, position=0, glob=""):
         self.outputBinding = Bindings()
-        self.outputBinding.prefix = prefix
-        self.outputBinding.sbg_cmdInclude = cmdInclude
-        self.outputBinding.separate = separate
-        self.outputBinding.position = position
         self.outputBinding.glob = glob
 
 class Bindings(): pass # can use to allow sub-attributes to an attribute
 
 if __name__ == "__main__":
+    # input method 1
     tool = CwlTool(id="test_tool", author="gaurav")
-    tool.add_input(id="yes", type="boolean", required=False)
     tool.add_base_command("python test.py")
     tool.add_docker("ubuntu:latest")
     tool.add_computational_requirements(aws="c3.xlarge")
     tool.add_argument("-t", 1, False)
-    print(tool.object2json())
+    tool.add_input(id="yes", type="boolean", required=False)
+    tool.add_output(id="no", type="File", glob="*.txt")
+
+    # input method 2
+    tool2 = CwlTool(id="test_tool_2", author="gaurav")
+    tool2.add_base_command("python test2.py")
+    tool2.add_argument("-f", 2, True)
+    input1 = CwlInput(id="yes", type="boolean", required="False")
+    input1.create_input_binding(prefix="-r")
+    tool2.object2input(input1)
+    print(tool2.object2json())
     # To run: python py2cwl.py | json_reformat
