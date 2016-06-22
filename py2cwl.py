@@ -29,7 +29,7 @@ class CwlTool:
         new_input["label"] = label
         new_input["description"] = description
         new_input["type"] = type
-        new_input["inputBinding"] = {"prefix": prefix, "sbg:cmdInclude": cmdInclude, "separate": str(separate).lower(), "position": position}
+        new_input["inputBinding"] = {"prefix": prefix, "sbg:cmdInclude": cmdInclude, "separate": separate, "position": position}
         if required:
             new_input["type"] = type
         else:
@@ -48,7 +48,7 @@ class CwlTool:
         self.outputs.append(new_output.copy())
 
     def add_argument(self, prefix="", order=0, separate=True):
-        new_argument = {"prefix": prefix, "order": order, "separate": str(separate).lower()}
+        new_argument = {"prefix": prefix, "order": order, "separate": separate}
         self.arguments.append(new_argument.copy())
 
     def add_base_command(self, base=""):
@@ -110,7 +110,7 @@ class CwlOutput:
         self.required = required
         self.label = label
         self.description = description
-        self.type = str(type)
+        self.type = type
 
     def create_output_binding(self, prefix="", cmdInclude=True, separate=True, position=0, glob=""):
         self.outputBinding = Bindings()
@@ -123,13 +123,11 @@ class CwlOutput:
 class Bindings(): pass # can use to allow sub-attributes to an attribute
 
 if __name__ == "__main__":
-    tool = CwlTool()
-    tool.add_input(id="yes", type="boolean")
+    tool = CwlTool(id="test_tool", author="gaurav")
+    tool.add_input(id="yes", type="boolean", required=False)
     tool.add_base_command("python test.py")
     tool.add_docker("ubuntu:latest")
     tool.add_computational_requirements(aws="c3.xlarge")
     tool.add_argument("-t", 1, False)
-
     print(tool.object2json())
     # To run: python py2cwl.py | json_reformat
-
