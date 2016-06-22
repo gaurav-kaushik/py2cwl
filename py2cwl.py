@@ -145,8 +145,10 @@ if __name__ == "__main__":
     tool2.add_base_command("python test.py")
     tool2.add_argument("-t", 1, False)
 
-    input2 = CwlInput(id="yes", type="boolean", required=False)
-    input2.create_input_binding(prefix="-r")
+    # input2 = CwlInput(id="yes", type="boolean", required=False)
+    # input2.create_input_binding(prefix="-r")
+    input2 = CwlInput(id="yes", type="boolean", required=False, prefix="-r")
+
 
     output2 = CwlOutput(id="no", type="File", glob="*.txt")
 
