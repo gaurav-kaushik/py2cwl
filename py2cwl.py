@@ -1,12 +1,11 @@
 from __future__ import print_function
 import simplejson as json
-from collections import OrderedDict
 import yaml
 
 
 class CwlTool:
 
-    def __init__(self, id="", author="", version="cwl:draft-2", description="", label=""):
+    def __init__(self, id, author=None, version="cwl:draft-2", description=None, label=None):
         self.id = id
         self.author = author
         self.version = version
@@ -24,7 +23,7 @@ class CwlTool:
         self.hints = []
         self.add_computational_requirements()
 
-    def add_input(self, id, required=True, label="", description="", type="File", prefix="", cmdInclude=True, separate=True, position=0):
+    def add_input(self, id, type, required=True, label=None, description=None, prefix=None, cmdInclude=True, separate=True, position=None):
         new_input = {"id": id}
         new_input["label"] = label
         new_input["description"] = description
@@ -34,7 +33,7 @@ class CwlTool:
         else: new_input["type"] = str("null" + " " + type).split()
         self.inputs.append(new_input.copy())
 
-    def add_output(self, id, required=True, label="", description="", type="File", glob=""):
+    def add_output(self, id, type, glob, required=True, label=None, description=None):
         new_output = {"id": id}
         new_output["label"] = label
         new_output["description"] = description
@@ -43,14 +42,14 @@ class CwlTool:
         else: new_output["type"] = str("null" + " " + type).split()
         self.outputs.append(new_output.copy())
 
-    def add_argument(self, prefix="", order=0, separate=True):
+    def add_argument(self, prefix=None, order=None, separate=True):
         new_argument = {"prefix": prefix, "order": order, "separate": separate}
-        self.arguments.append(new_argument.copy())
+        self.arguments.append(clean_null_values(new_argument.copy()))
 
-    def add_base_command(self, base=""):
+    def add_base_command(self, base=None):
         self.baseCommand = base.split()
 
-    def add_docker(self, dockerPull, dockerImageID=""):
+    def add_docker(self, dockerPull, dockerImageID=None):
         docker = {"class": "DockerRequirement", "dockerPull": dockerPull, "dockerImageID": dockerImageID}
         self.hints.append(docker.copy())
 
@@ -74,31 +73,31 @@ class CwlTool:
             self.add_aws_instance(value=aws)
 
     def object2json(self):
-        js = json.dumps(self, default=lambda o: o.__dict__)
-        return js.replace("class_", "class")
+        data = json.dumps(self, default=lambda o: clean_null_values(o.__dict__), sort_keys=True, skipkeys=True)
+        data = data.replace("class_", "class")
+        data = data.replace("sbg_cmdInclude", "sbg:cmdInclude")
+        return data
 
+    def object2yaml(self):
+        return yaml.safe_dump(self.object2json())
 
     def object2input(self, *args):
         """
         :param args is a list of input ports (CwlInput())
         """
         for inputObject in args:
-            od = OrderedDict(inputObject.__dict__)
-            # items = od.items()  # list(od.items()) in Python3
-            # items.reverse()
-            # od = OrderedDict(items)
-            self.inputs.append(od)
+            self.inputs.append(clean_null_values(inputObject.__dict__))
 
     def object2output(self, *args):
         """
         :param args is a list of output ports (CwlOutput())
         """
         for outputObject in args:
-            self.outputs.append(outputObject.__dict__)
+            self.outputs.append(clean_null_values(outputObject.__dict__))
 
 class CwlInput:
     """ CWL Input Port """
-    def __init__(self, id, type, required=True, label="", description="", prefix=None):
+    def __init__(self, id, type, required=True, label=None, description=None, prefix=None):
         self.id = id
         self.required = required
         self.label = label
@@ -107,7 +106,7 @@ class CwlInput:
         else: self.type = str("null" + " " + type).split()
         if prefix: self.create_input_binding(prefix)
 
-    def create_input_binding(self, prefix="", cmdInclude=True, separate=True, position=0):
+    def create_input_binding(self, prefix=None, cmdInclude=True, separate=True, position=None):
         self.inputBinding = Bindings()
         self.inputBinding.prefix = prefix
         self.inputBinding.sbg_cmdInclude = cmdInclude
@@ -116,7 +115,7 @@ class CwlInput:
 
 class CwlOutput:
     """ CWL Output Port """
-    def __init__(self, id, type, required=True, label="", description="", glob=None):
+    def __init__(self, id, type, required=True, label=None, description=None, glob=None):
         self.id = id
         self.required = required
         self.label = label
@@ -129,6 +128,12 @@ class CwlOutput:
         self.outputBinding.glob = glob
 
 class Bindings(): pass # can use to allow sub-attributes to an attribute
+
+def clean_null_values(input_dict):
+    for k,v in input_dict.items():
+        if v is None: del(input_dict[k])
+        elif isinstance(v, dict): clean_null_values(v)
+    return input_dict
 
 if __name__ == "__main__":
     # input method 1
@@ -143,17 +148,14 @@ if __name__ == "__main__":
     # input method 2
     tool2 = CwlTool(id="test_tool", author="gaurav")
     tool2.add_base_command("python test.py")
-    tool2.add_argument("-t", 1, False)
+    tool2.add_argument(prefix="-t", separate=False)
 
-    # input2 = CwlInput(id="yes", type="boolean", required=False)
-    # input2.create_input_binding(prefix="-r")
     input2 = CwlInput(id="yes", type="boolean", required=False, prefix="-r")
-
-
     output2 = CwlOutput(id="no", type="File", glob="*.txt")
 
-    tool2.object2input(input2)
-    tool2.object2output(output2)
+    tool2.object2input(CwlInput(id="yes", type="boolean", required=False, prefix="-r"))
+    tool2.object2output(CwlOutput(id="no", type="File", glob="*.txt"))
 
+    # print(tool2.object2yaml())
     print(tool2.object2json())
-    # To run: python py2cwl.py | json_reformat
+    # To run: python py2cwl.py | json_reformat | json2yaml
