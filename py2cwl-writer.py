@@ -69,8 +69,7 @@ class CwlTool:
     def add_computational_requirements(self, cpu=1, mem=1000, aws=None):
         self.add_cpu(value=cpu)
         self.add_mem(value=mem)
-        if aws:
-            self.add_aws_instance(value=aws)
+        if aws: self.add_aws_instance(value=aws)
 
     def object2json(self):
         data = json.dumps(self, default=lambda o: clean_null_values(o.__dict__), sort_keys=True, skipkeys=True)

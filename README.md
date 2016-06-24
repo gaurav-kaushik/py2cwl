@@ -1,9 +1,23 @@
-#py2cwl-writer
+#py2cwl
 
 ##Usage
-**Command:** `python py2cwl.py | json_reformat > <file.cwl>`
 
-To get the json_reformat tool, use:
-	`brew install yajl` (Mac OSX) or `apt-get install yajl-tools` (Linux)
+### Python to CWL JSON
+	`python py2cwl-writer.py | json_reformat > <file.cwl>`
 
-Can convert to (messy) YAML with json2yaml (`brew install json2yaml`): `python py2cwl.py | json_reformat | json2yaml > <file.yml>`
+-
+### Python to CWL YAML (messy)
+	`python py2cwl-writer.py | json_reformat | json2yaml > <file.yml>`
+
+### JSON/YAML tools
+**json_reformat**:
+
+Mac: `brew install yajl`
+
+Linux: `apt-get install yajl-tools`
+
+**json2yaml**:
+
+Mac: `brew install json2yaml` 
+
+Node: `npm install -g json2yaml`
