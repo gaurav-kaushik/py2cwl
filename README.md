@@ -3,11 +3,11 @@
 ##Usage
 
 ### Python to CWL JSON
-	`python py2cwl-writer.py | json_reformat > <file.cwl>`
+	`python py2cwlwriter.py | json_reformat > <file.cwl>`
 
 -
 ### Python to CWL YAML (messy)
-	`python py2cwl-writer.py | json_reformat | json2yaml > <file.yml>`
+	`python py2cwlwriter.py | json_reformat | json2yaml > <file.yml>`
 
 ### JSON/YAML tools
 **json_reformat**:
