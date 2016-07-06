@@ -53,8 +53,8 @@ if __name__ == "__main__":
     # try: print(tool.Tool.__dict__)
     # except: print("No Tool")
 
-    try: print(vars(tool.Tool))
-    except: print("No Tool")
+    # try: print(vars(tool.Tool))
+    # except: print("No Tool")
 
-    c = CwlTool(id="tool")
-    vars(c)
+    c = CwlTool(id="datboi", label="ohshitwaddup")
+    print(vars(c))
