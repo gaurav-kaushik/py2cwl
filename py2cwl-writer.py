@@ -157,4 +157,5 @@ if __name__ == "__main__":
 
     # print(tool2.object2yaml())
     print(tool2.object2json())
+    # print(tool2.inputs[0]['id'])
     # To run: python py2cwl.py | json_reformat | json2yaml
