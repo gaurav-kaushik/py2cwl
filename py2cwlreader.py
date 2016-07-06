@@ -44,14 +44,17 @@ if __name__ == "__main__":
     # tool = CwlReader('{"Hello":"World", "inputs":[{"id":"yes"}]}')
 
     # Tests
-    try: print(tool.Json)
-    except: print("No Json")
+    # try: print(tool.Json)
+    # except: print("No Json")
+    #
+    # try: print(yaml.dump(tool.Yaml))
+    # except: print("No Yaml")
+    #
+    # try: print(tool.Tool.__dict__)
+    # except: print("No Tool")
 
-    try: print(yaml.dump(tool.Yaml))
-    except: print("No Yaml")
-
-    try: print(tool.Tool.__dict__)
+    try: print(vars(tool.Tool))
     except: print("No Tool")
 
-    try: print(tool.Tool)
-    except: print("No Tool")
+    c = CwlTool(id="tool")
+    vars(c)

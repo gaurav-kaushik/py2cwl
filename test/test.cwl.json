@@ -1,52 +1,79 @@
 {
-    "inputs": [
-        {
-            "inputBinding": {
-                "position": 0,
-                "prefix": "-r",
-                "sbg_cmdInclude": true,
-                "separate": true
-            },
-            "description": "",
-            "required": "False",
-            "label": "",
-            "type": "boolean",
-            "id": "yes"
-        }
-    ],
-    "stdin": [
-
-    ],
-    "description": "",
-    "author": "gaurav",
-    "outputs": [
-
-    ],
-    "stdout": [
-
-    ],
-    "baseCommand": [
-        "python",
-        "test2.py"
-    ],
-    "label": "",
-    "hints": [
-
-    ],
-    "successCodes": [
-
-    ],
-    "version": "cwl:draft-2",
     "arguments": [
         {
-            "prefix": "-f",
-            "order": 2,
-            "separate": true
+            "prefix": "-t",
+            "separate": false
         }
+    ],
+    "author": "gaurav",
+    "baseCommand": [
+        "python",
+        "test.py"
+    ],
+    "class": "CommandLineTool",
+    "hints": [
+        {
+            "class": "sbg:CPURequirement",
+            "value": 1
+        },
+        {
+            "class": "sbg:MemRequirement",
+            "value": 1000
+        },
+        {
+            "class": "DockerRequirement",
+            "dockerImageID": null,
+            "dockerPull": "ubuntu:latest"
+        }
+    ],
+    "id": "test_tool",
+    "inputs": [
+        {
+            "id": "yes",
+            "inputBinding": {
+                "prefix": "-r",
+                "sbg:cmdInclude": true,
+                "separate": true
+            },
+            "required": false,
+            "type": [
+                "null",
+                "boolean"
+            ]
+        },
+        {
+            "id": "maybe",
+            "inputBinding": {
+                "prefix": "-r",
+                "sbg:cmdInclude": true,
+                "separate": true
+            },
+            "required": true,
+            "type": [
+                "File"
+            ]
+        }
+    ],
+    "label": "testing123",
+    "outputs": [
+        {
+            "id": "no",
+            "outputBinding": {
+                "glob": "*.txt"
+            },
+            "required": true,
+            "type": [
+                "File"
+            ]
+        }
+    ],
+    "stdin": "",
+    "stdout": "",
+    "successCodes": [
+
     ],
     "temporaryFailCodes": [
 
     ],
-    "id": "test_tool_2",
-    "app_class": "CommandLineTool"
+    "version": "cwl:draft-2"
 }

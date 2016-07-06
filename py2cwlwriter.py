@@ -5,7 +5,7 @@ import yaml
 
 class CwlTool:
 
-    def __init__(self, id, author=None, version="cwl:draft-2", description=None, label=None):
+    def __init__(self, id, label, author=None, version="cwl:draft-2", description=None):
         self.id = id
         self.author = author
         self.version = version
@@ -15,8 +15,8 @@ class CwlTool:
         self.inputs = []
         self.outputs = []
         self.arguments = []
-        self.stdout = []
-        self.stdin = []
+        self.stdout = ""
+        self.stdin = ""
         self.baseCommand = []
         self.successCodes = []
         self.temporaryFailCodes = []
@@ -101,8 +101,8 @@ class CwlInput:
         self.required = required
         self.label = label
         self.description = description
-        if required: self.type = type
-        else: self.type = str("null" + " " + type).split()
+        if required: self.type = type.split("!@#$%^&*")
+        else: self.type = list(str("null" + " " + type).split())
         if prefix: self.create_input_binding(prefix)
 
     def create_input_binding(self, prefix=None, cmdInclude=True, separate=True, position=None):
@@ -119,7 +119,7 @@ class CwlOutput:
         self.required = required
         self.label = label
         self.description = description
-        self.type = type
+        self.type = type.split("!@#$%^&*") # converts a string to a list of size one
         if glob: self.create_output_binding(glob)
 
     def create_output_binding(self, glob):
@@ -135,27 +135,28 @@ def clean_null_values(input_dict):
     return input_dict
 
 if __name__ == "__main__":
-    # input method 1
-    tool = CwlTool(id="test_tool", author="gaurav")
-    tool.add_base_command("python test.py")
-    tool.add_docker("ubuntu:latest")
-    tool.add_computational_requirements(aws="c3.xlarge")
-    tool.add_argument("-t", 1, False)
-    tool.add_input(id="yes", type="boolean", required=False, prefix="-r")
-    tool.add_output(id="no", type="File", glob="*.txt")
+    # # input method 1
+    # tool = CwlTool(id="test_tool", author="gaurav")
+    # tool.add_base_command("python test.py")
+    # tool.add_docker("ubuntu:latest")
+    # tool.add_computational_requirements(aws="c3.xlarge")
+    # tool.add_argument("-t", 1, False)
+    # tool.add_input(id="yes", type="boolean", required=False, prefix="-r")
+    # tool.add_output(id="no", type="File", glob="*.txt")
 
     # input method 2
-    tool2 = CwlTool(id="test_tool", author="gaurav")
-    tool2.add_base_command("python test.py")
-    tool2.add_argument(prefix="-t", separate=False)
+    tool = CwlTool(id="test_tool", author="gaurav", label="testing123")
+    tool.add_base_command("python test.py")
+    tool.add_argument(prefix="-t", separate=False)
+    tool.add_docker(dockerPull="ubuntu:latest")
 
-    input2 = CwlInput(id="yes", type="boolean", required=False, prefix="-r")
-    output2 = CwlOutput(id="no", type="File", glob="*.txt")
+    input1 = CwlInput(id="yes", type="boolean", required=False, prefix="-r")
+    input2 = CwlInput(id="maybe", type="File", prefix="-r")
+    tool.object2input(input1)
+    tool.object2input(input2)
 
-    tool2.object2input(CwlInput(id="yes", type="boolean", required=False, prefix="-r"))
-    tool2.object2output(CwlOutput(id="no", type="File", glob="*.txt"))
+    tool.object2output(CwlOutput(id="no", type="File", glob="*.txt"))
 
-    # print(tool2.object2yaml())
-    print(tool2.object2json())
-    # print(tool2.inputs[0]['id'])
+    print(tool.object2json())
+
     # To run: python py2cwl.py | json_reformat | json2yaml
