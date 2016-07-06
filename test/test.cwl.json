@@ -1,0 +1,52 @@
+{
+    "inputs": [
+        {
+            "inputBinding": {
+                "position": 0,
+                "prefix": "-r",
+                "sbg_cmdInclude": true,
+                "separate": true
+            },
+            "description": "",
+            "required": "False",
+            "label": "",
+            "type": "boolean",
+            "id": "yes"
+        }
+    ],
+    "stdin": [
+
+    ],
+    "description": "",
+    "author": "gaurav",
+    "outputs": [
+
+    ],
+    "stdout": [
+
+    ],
+    "baseCommand": [
+        "python",
+        "test2.py"
+    ],
+    "label": "",
+    "hints": [
+
+    ],
+    "successCodes": [
+
+    ],
+    "version": "cwl:draft-2",
+    "arguments": [
+        {
+            "prefix": "-f",
+            "order": 2,
+            "separate": true
+        }
+    ],
+    "temporaryFailCodes": [
+
+    ],
+    "id": "test_tool_2",
+    "app_class": "CommandLineTool"
+}

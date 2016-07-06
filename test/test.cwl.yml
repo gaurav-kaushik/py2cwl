@@ -1,0 +1,33 @@
+arguments: 
+  - prefix: "-t"
+    separate: false
+author: "gaurav"
+baseCommand: ["python", "test.py"]
+class: "CommandLineTool"
+hints: 
+  - class: "sbg:CPURequirement"
+    value: 1
+  - class: "sbg:MemRequirement"
+    value: 1000
+id: "test_tool"
+inputs: 
+  - id: "yes"
+    inputBinding: 
+      prefix: "-r"
+      sbg:cmdInclude: true
+      separate: true
+    required: false
+    type: 
+      - "null"
+      - "boolean"
+outputs: 
+  - id: "no"
+    outputBinding: 
+      glob: "*.txt"
+    required: true
+    type: "File"
+stdin: []
+stdout: []
+successCodes: []
+temporaryFailCodes: []
+version: "cwl:draft-2"

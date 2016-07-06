@@ -1,24 +1,27 @@
 from __future__ import print_function
-import simplejson as json
-# import yaml
 import argparse
+import simplejson as json
+import yaml
+from py2cwlwriter import CwlTool
 
 class CwlReader:
 
     def __init__(self, in_json=False, in_yaml=False):
         if in_json:
-            # Check for input as JSON
+            self.Json = Json()
             try:
-                # import from file
                 with open(in_json, 'r') as j:
-                    self.Json = json.load(j)
+                    self.Json = json.load(j) # import from file
             except:
-                # import from json string
-                self.Json = json.loads(in_json)
+                self.Json = json.loads(in_json) # import from json string
+        elif in_yaml:
+            self.Yaml = Yaml()
+            with open(in_yaml, 'r') as y:
+                self.Yaml = yaml.safe_load(y) # import from files
 
-        if in_yaml:
-            # more to come
-            return
+        else:
+            print("Please input JSON or YAML")
+
 
     def json2yaml(self):
         """
@@ -41,16 +44,19 @@ if __name__ == "__main__":
     parser.add_argument("-y", "--yaml", default=None)
     args = vars(parser.parse_args())
 
-    # instantiate json file
+    ## instantiate json file
     tool = CwlReader(in_json=args['json'], in_yaml=args['yaml'])
 
-    # instantiate with json string
+    # # instantiate with json string
     # tool = CwlReader('{"Hello":"World"}')
 
     # Tests
-    print(tool.Json)
-    print(tool.__dict__)
-    try:
-        print(tool.Json['inputs'])
-    except:
-        print("No such key")
+    try: print(tool.Json)
+    except: print("No Json")
+
+    try: print(yaml.dump(tool.Yaml))
+    except: print("No Yaml")
+    # print(tool.__dict__)
+    print(tool.Yaml['inputs'][0])
+
+    print(tool.Yaml['inputs'][0]['inputBinding'])
