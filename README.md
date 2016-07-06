@@ -3,18 +3,11 @@
 ##Usage
 
 ### Python to CWL JSON
-	`python py2cwlwriter.py | json_reformat > <file.cwl>`
+	python py2cwlwriter.py > <file.cwl>
 
 -
 ### Python to CWL YAML (messy)
-	`python py2cwlwriter.py | json_reformat | json2yaml > <file.yml>`
-
-### JSON/YAML tools
-**json_reformat**:
-
-Mac: `brew install yajl`
-
-Linux: `apt-get install yajl-tools`
+	python py2cwlwriter.py | json2yaml > <file.yml>
 
 **json2yaml**:
 
