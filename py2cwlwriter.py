@@ -1,36 +1,44 @@
 from __future__ import print_function
-import simplejson as json
+import json
 import yaml
 
 
 class CwlTool:
 
     def __init__(self, id, label, author=None, version="cwl:draft-2", description=None):
+        # required descriptive fields
         self.id = id
         self.author = author
         self.version = version
         self.description = description
         self.label = label
         self.class_ = "CommandLineTool"
+        # IO/args
         self.inputs = []
         self.outputs = []
         self.arguments = []
+        # stdin/out
         self.stdout = ""
         self.stdin = ""
+        # base command
         self.baseCommand = []
+
+        # misc
         self.successCodes = []
         self.temporaryFailCodes = []
         self.hints = []
         self.add_computational_requirements()
 
-    def add_input(self, id, type, required=True, label=None, description=None, prefix=None, cmdInclude=True, separate=True, position=None):
+    def add_input(self, id, type, required=True, label=None, description=None,
+                        prefix=None, cmdInclude=True, separate=True, position=None):
         new_input = {"id": id}
         new_input["label"] = label
         new_input["description"] = description
         new_input["type"] = type
-        new_input["inputBinding"] = {"prefix": prefix, "sbg:cmdInclude": cmdInclude, "separate": separate, "position": position}
-        if required: new_input["type"] = type
-        else: new_input["type"] = str("null" + " " + type).split()
+        new_input["inputBinding"] = {"prefix": prefix, "sbg:cmdInclude": cmdInclude,
+                                     "separate": separate, "position": position}
+        if not required: new_input["type"] = ["null"]
+        else: new_input["type"] = ["null", str(type)]
         self.inputs.append(new_input.copy())
 
     def add_output(self, id, type, glob, required=True, label=None, description=None):
@@ -38,8 +46,8 @@ class CwlTool:
         new_output["label"] = label
         new_output["description"] = description
         new_output["outputBinding"] = {'glob': glob}
-        if required: new_output["type"] = type
-        else: new_output["type"] = str("null" + " " + type).split()
+        if not required: new_output["type"] = ["null"]
+        else: new_output["type"] = ["null", str(type)]
         self.outputs.append(new_output.copy())
 
     def add_argument(self, prefix=None, order=None, separate=True):
@@ -72,7 +80,11 @@ class CwlTool:
         if aws: self.add_aws_instance(value=aws)
 
     def object2json(self):
-        data = json.dumps(self, default=lambda o: clean_null_values(o.__dict__), sort_keys=True, skipkeys=True)
+        """
+        methods to clean up the object when converting to JSON
+        """
+        data = json.dumps(self, default=lambda o: clean_null_values(o.__dict__),
+                                sort_keys=True, skipkeys=True, indent=2)
         data = data.replace("class_", "class")
         data = data.replace("sbg_cmdInclude", "sbg:cmdInclude")
         return data
@@ -87,6 +99,13 @@ class CwlTool:
         for inputObject in args:
             self.inputs.append(clean_null_values(inputObject.__dict__))
 
+    def object2argument(self, *args):
+        """
+        :param args is a list of arguments (CwlArgument())
+        """
+        for argObject in args:
+            self.arguments.append(clean_null_values(argObject.__dict__))
+
     def object2output(self, *args):
         """
         :param args is a list of output ports (CwlOutput())
@@ -96,21 +115,22 @@ class CwlTool:
 
 class CwlInput:
     """ CWL Input Port """
-    def __init__(self, id, type, required=True, label=None, description=None, prefix=None):
+    def __init__(self, id, type, required=True, label=None, description=None, prefix=None, separate=True, position=0):
         self.id = id
         self.required = required
         self.label = label
         self.description = description
-        if required: self.type = type.split("!@#$%^&*")
-        else: self.type = list(str("null" + " " + type).split())
-        if prefix: self.create_input_binding(prefix)
+        if required: self.type = [str(type)] # will change this later to handle arrays
+        else: self.type = ["null", str(type)]
 
-    def create_input_binding(self, prefix=None, cmdInclude=True, separate=True, position=None):
+        if prefix: self.create_input_binding(prefix, separate, position)
+
+    def create_input_binding(self, prefix, separate, position, cmdInclude=True):
         self.inputBinding = Bindings()
         self.inputBinding.prefix = prefix
-        self.inputBinding.sbg_cmdInclude = cmdInclude
         self.inputBinding.separate = separate
         self.inputBinding.position = position
+        self.inputBinding.sbg_cmdInclude = cmdInclude # include by default, later can inject javascript expression
 
 class CwlOutput:
     """ CWL Output Port """
@@ -119,12 +139,21 @@ class CwlOutput:
         self.required = required
         self.label = label
         self.description = description
-        self.type = type.split("!@#$%^&*") # converts a string to a list of size one
+        if required: self.type = [str(type)] # will change this later to handle arrays
+        else: self.type = ["null", str(type)]
         if glob: self.create_output_binding(glob)
 
     def create_output_binding(self, glob):
         self.outputBinding = Bindings()
         self.outputBinding.glob = glob
+
+class CwlArgument:
+    """ CWL Arguments """
+    def __init__(self, valueFrom, prefix=None, separate=False, position=0):
+        self.valueFrom = valueFrom
+        self.prefix = prefix
+        self.separate = separate
+        self.position = position
 
 class Bindings(): pass # can use to allow sub-attributes to an attribute
 
@@ -135,28 +164,28 @@ def clean_null_values(input_dict):
     return input_dict
 
 if __name__ == "__main__":
-    # # input method 1
-    # tool = CwlTool(id="test_tool", author="gaurav")
-    # tool.add_base_command("python test.py")
-    # tool.add_docker("ubuntu:latest")
-    # tool.add_computational_requirements(aws="c3.xlarge")
-    # tool.add_argument("-t", 1, False)
-    # tool.add_input(id="yes", type="boolean", required=False, prefix="-r")
-    # tool.add_output(id="no", type="File", glob="*.txt")
 
-    # input method 2
+    # create cwl tool
     tool = CwlTool(id="test_tool", author="gaurav", label="testing123")
     tool.add_base_command("python test.py")
-    tool.add_argument(prefix="-t", separate=False)
     tool.add_docker(dockerPull="ubuntu:latest")
 
-    input1 = CwlInput(id="yes", type="boolean", required=False, prefix="-r")
-    input2 = CwlInput(id="maybe", type="File", prefix="-r")
+    # add input ports
+    input1 = CwlInput(id="yes", type="boolean", required=False, prefix="-y")
+    input2 = CwlInput(id="maybe", type="File", prefix="-m")
     tool.object2input(input1)
     tool.object2input(input2)
 
+    # add arguments
+    argument1 = CwlArgument(prefix="-r", valueFrom=30, separate=True, position=1)
+    argument2 = CwlArgument(valueFrom="--verbose", position=99)
+    tool.object2argument(argument1)
+    tool.object2argument(argument2)
+
+    # add output ports
     tool.object2output(CwlOutput(id="no", type="File", glob="*.txt"))
 
+    # pretty print to console
     print(tool.object2json())
 
-    # To run: python py2cwl.py | json_reformat | json2yaml
+    # To run: python py2cwl.py | json2yaml

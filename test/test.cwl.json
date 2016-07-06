@@ -1,79 +1,84 @@
 {
-    "arguments": [
-        {
-            "prefix": "-t",
-            "separate": false
-        }
-    ],
-    "author": "gaurav",
-    "baseCommand": [
-        "python",
-        "test.py"
-    ],
-    "class": "CommandLineTool",
-    "hints": [
-        {
-            "class": "sbg:CPURequirement",
-            "value": 1
-        },
-        {
-            "class": "sbg:MemRequirement",
-            "value": 1000
-        },
-        {
-            "class": "DockerRequirement",
-            "dockerImageID": null,
-            "dockerPull": "ubuntu:latest"
-        }
-    ],
-    "id": "test_tool",
-    "inputs": [
-        {
-            "id": "yes",
-            "inputBinding": {
-                "prefix": "-r",
-                "sbg:cmdInclude": true,
-                "separate": true
-            },
-            "required": false,
-            "type": [
-                "null",
-                "boolean"
-            ]
-        },
-        {
-            "id": "maybe",
-            "inputBinding": {
-                "prefix": "-r",
-                "sbg:cmdInclude": true,
-                "separate": true
-            },
-            "required": true,
-            "type": [
-                "File"
-            ]
-        }
-    ],
-    "label": "testing123",
-    "outputs": [
-        {
-            "id": "no",
-            "outputBinding": {
-                "glob": "*.txt"
-            },
-            "required": true,
-            "type": [
-                "File"
-            ]
-        }
-    ],
-    "stdin": "",
-    "stdout": "",
-    "successCodes": [
-
-    ],
-    "temporaryFailCodes": [
-
-    ],
-    "version": "cwl:draft-2"
+  "arguments": [
+    {
+      "position": 1, 
+      "prefix": "-r", 
+      "separate": true, 
+      "valueFrom": 30
+    }, 
+    {
+      "position": 99, 
+      "separate": false, 
+      "valueFrom": "--verbose"
+    }
+  ], 
+  "author": "gaurav", 
+  "baseCommand": [
+    "python", 
+    "test.py"
+  ], 
+  "class": "CommandLineTool", 
+  "hints": [
+    {
+      "class": "sbg:CPURequirement", 
+      "value": 1
+    }, 
+    {
+      "class": "sbg:MemRequirement", 
+      "value": 1000
+    }, 
+    {
+      "class": "DockerRequirement", 
+      "dockerImageID": null, 
+      "dockerPull": "ubuntu:latest"
+    }
+  ], 
+  "id": "test_tool", 
+  "inputs": [
+    {
+      "id": "yes", 
+      "inputBinding": {
+        "position": 0, 
+        "prefix": "-y", 
+        "sbg:cmdInclude": true, 
+        "separate": true
+      }, 
+      "required": false, 
+      "type": [
+        "null", 
+        "boolean"
+      ]
+    }, 
+    {
+      "id": "maybe", 
+      "inputBinding": {
+        "position": 0, 
+        "prefix": "-m", 
+        "sbg:cmdInclude": true, 
+        "separate": true
+      }, 
+      "required": true, 
+      "type": [
+        "File"
+      ]
+    }
+  ], 
+  "label": "testing123", 
+  "outputs": [
+    {
+      "id": "no", 
+      "outputBinding": {
+        "glob": "*.txt"
+      }, 
+      "required": true, 
+      "type": [
+        "File"
+      ]
+    }
+  ], 
+  "stdin": "", 
+  "stdout": "", 
+  "successCodes": [], 
+  "temporaryFailCodes": [], 
+  "version": "cwl:draft-2"
 }

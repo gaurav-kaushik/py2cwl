@@ -1,6 +1,6 @@
 from __future__ import print_function
 import argparse
-import simplejson as json
+import json
 import yaml
 from py2cwlwriter import CwlTool
 
