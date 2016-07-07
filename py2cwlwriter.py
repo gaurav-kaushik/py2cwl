@@ -114,7 +114,7 @@ class CwlTool:
         #       e.g. input ports
 
     def requirements_check(self):
-        if not self.requirements:
+        if not any(d["class"] == "ExpressionEngineRequirement" for d in self.requirements):
             expr_reqs = dict()
             expr_reqs["class"] = "ExpressionEngineRequirement"
             expr_reqs["id"] = "#cwl-js-engine"
@@ -140,6 +140,7 @@ class CwlTool:
         """
         for inputObject in args:
             self.inputs.append(clean_null_values(inputObject.__dict__))
+        # Add checker for dynamic expressions in input objects -> self.requirements.check
 
     def object2argument(self, *args):
         """
