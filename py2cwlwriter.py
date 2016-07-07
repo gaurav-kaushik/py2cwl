@@ -64,11 +64,11 @@ class CwlTool:
         self.hints.append(docker.copy())
 
     def add_cpu(self, value):
-        cpu = {"class": "sbg:CPURequirement", "value": self.expression_check(value)}
+        cpu = {"class": "sbg:CPURequirement", "value": self.tool_expression_check(value)}
         self.hints.append(cpu.copy())
 
     def add_mem(self, value):
-        mem = {"class": "sbg:MemRequirement", "value": self.expression_check(value)}
+        mem = {"class": "sbg:MemRequirement", "value": self.tool_expression_check(value)}
         self.hints.append(mem.copy())
 
     def add_aws_instance(self, value):
@@ -81,27 +81,15 @@ class CwlTool:
         if aws: self.add_aws_instance(aws)
 
     def add_stdin(self, stdin):
-        self.stdin = self.expression_check(stdin)
+        self.stdin = self.tool_expression_check(stdin)
 
     def add_stdout(self, stdout):
-        self.stdout = self.expression_check(stdout)
+        self.stdout = self.tool_expression_check(stdout)
 
-    def expression_check(self, value):
+    def tool_expression_check(self, value):
         # ensure that the appropriate requirements for having expressions exists
         self.requirements_check()
-
-        # check if any js-triggering chars are in your value and return appropriate dict if so
-        if any(marker in str(value) for marker in ["'", "$", "."]):
-            return {"class": "Expression", "engine": "#cwl-js-engine", "script": value}
-        else:
-            return value
-        # Different ways the expression engine is triggered
-        #   the value for the key becomes the "new_value" dict
-        #      e.g. stdin/out, output glob, file content, filename, components of the base command
-        #   a 'class' has a 'value' that becomes the "new_value" dict
-        #       e.g. in hints
-        #   a 'class' has a 'valueFrom' that becomes the "new_value" dict
-        #       e.g. input ports
+        return expression_check(value)
 
     def requirements_check(self):
         if not any(d["class"] == "ExpressionEngineRequirement" for d in self.requirements):
@@ -112,9 +100,7 @@ class CwlTool:
             self.requirements.append(expr_reqs)
 
     def object2json(self):
-        """
-        methods to clean up the object when converting to JSON
-        """
+        """ methods to clean up the object when converting to JSON """
         data = json.dumps(self, default=lambda o: clean_null_values(o.__dict__),
                                 sort_keys=True, skipkeys=True, indent=2)
         data = data.replace("class_", "class")
@@ -125,24 +111,18 @@ class CwlTool:
         return yaml.safe_dump(self.object2json())
 
     def object2input(self, *args):
-        """
-        :param args is a list of input ports (CwlInput())
-        """
+        """ param args is a list of input ports (CwlInput()) """
         for inputObject in args:
             self.inputs.append(clean_null_values(inputObject.__dict__))
         # Add checker for dynamic expressions in input objects -> self.requirements.check
 
     def object2argument(self, *args):
-        """
-        :param args is a list of arguments (CwlArgument())
-        """
+        """ param args is a list of arguments (CwlArgument()) """
         for argObject in args:
             self.arguments.append(clean_null_values(argObject.__dict__))
 
     def object2output(self, *args):
-        """
-        :param args is a list of output ports (CwlOutput())
-        """
+        """ param args is a list of output ports (CwlOutput()) """
         for outputObject in args:
             self.outputs.append(clean_null_values(outputObject.__dict__))
 
@@ -156,7 +136,7 @@ class CwlInput:
         self.label = label
         self.description = description
         if prefix: self.create_input_binding(prefix, separate, position)
-        if valueFrom: self.valueFrom = self.expression_check(valueFrom)
+        if valueFrom: self.valueFrom = expression_check(valueFrom)
 
     def create_input_binding(self, prefix, separate, position, cmdInclude=True):
         self.inputBinding = Bindings()
@@ -164,13 +144,6 @@ class CwlInput:
         self.inputBinding.separate = separate
         self.inputBinding.position = position
         self.inputBinding.sbg_cmdInclude = cmdInclude # include by default, later can inject javascript expression
-
-    def expression_check(self, value):
-        # check if any js-triggering chars are in your value and return appropriate dict if so
-        if any(marker in str(value) for marker in ["'", "$", "."]):
-            return {"class": "Expression", "engine": "#cwl-js-engine", "script": value}
-        else:
-            return value
 
 class CwlOutput:
     """ CWL Output Port """
@@ -186,15 +159,8 @@ class CwlOutput:
 
     def create_output_binding(self, glob, outputEval):
         self.outputBinding = Bindings()
-        self.outputBinding.glob = self.expression_check(glob)
-        if outputEval: self.outputBinding.outputEval = self.expression_check(outputEval)
-
-    def expression_check(self, value):
-        # check if any js-triggering chars are in your value and return appropriate dict if so
-        if any(marker in str(value) for marker in ["'", "$", "."]):
-            return {"class": "Expression", "engine": "#cwl-js-engine", "script": value}
-        else:
-            return value
+        self.outputBinding.glob = expression_check(glob)
+        if outputEval: self.outputBinding.outputEval = expression_check(outputEval)
 
     def array_check(self):
         return # fill in return dict for array
@@ -202,7 +168,7 @@ class CwlOutput:
 class CwlArgument:
     """ CWL Arguments """
     def __init__(self, valueFrom, prefix=None, separate=False, position=0):
-        self.valueFrom = valueFrom
+        self.valueFrom = expression_check(valueFrom)
         self.prefix = prefix
         self.separate = separate
         self.position = position
@@ -216,10 +182,24 @@ def clean_null_values(input_dict):
     return input_dict
 
 def check_id_hash(id):
-    if id.startswith('#'):
-        return id
+    if id.startswith('#'): return id
+    else: return '#' + id
+
+def expression_check(value, triggers=["'", "$"]):
+    """
+    Check if any js-triggering chars are in your value and return appropriate dict if True
+        # Different ways the expression engine is triggered:
+        #   the value for the key becomes the "new_value" dict
+        #      e.g. stdin/out, output glob, file content, filename, components of the base command
+        #   a 'class' has a 'value' that becomes the "new_value" dict
+        #       e.g. in hints
+        #   a 'class' has a 'valueFrom' that becomes the "new_value" dict
+        #       e.g. input ports
+    """
+    if any(marker in str(value) for marker in triggers):
+        return {"class": "Expression", "engine": "#cwl-js-engine", "script": value}
     else:
-        return '#' + id
+        return value
 
 if __name__ == "__main__":
 
@@ -249,3 +229,10 @@ if __name__ == "__main__":
     print(tool.object2json())
 
     # To run: python py2cwl.py | json2yaml
+
+    """
+    Left to do:
+    - array checking
+    - secondary files
+    - check complex IO types (enum, record, etc)
+    """
