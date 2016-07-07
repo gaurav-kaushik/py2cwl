@@ -99,6 +99,22 @@ class CwlTool:
             expr_reqs["requirements"] = [{"class": "DockerRequirement", "dockerPull": "rabix/js-engine"}]
             self.requirements.append(expr_reqs)
 
+    def add_input_port(self, *args):
+        """ param args is a list of input ports (CwlInput()) """
+        for inputObject in args:
+            self.inputs.append(clean_null_values(inputObject.__dict__))
+        # Add checker for dynamic expressions in input objects -> self.requirements.check
+
+    def add_argument(self, *args):
+        """ param args is a list of arguments (CwlArgument()) """
+        for argObject in args:
+            self.arguments.append(clean_null_values(argObject.__dict__))
+
+    def add_output_port(self, *args):
+        """ param args is a list of output ports (CwlOutput()) """
+        for outputObject in args:
+            self.outputs.append(clean_null_values(outputObject.__dict__))
+
     def object2json(self):
         """ methods to clean up the object when converting to JSON """
         data = json.dumps(self, default=lambda o: clean_null_values(o.__dict__),
@@ -109,22 +125,6 @@ class CwlTool:
 
     def object2yaml(self):
         return yaml.safe_dump(self.object2json())
-
-    def object2input(self, *args):
-        """ param args is a list of input ports (CwlInput()) """
-        for inputObject in args:
-            self.inputs.append(clean_null_values(inputObject.__dict__))
-        # Add checker for dynamic expressions in input objects -> self.requirements.check
-
-    def object2argument(self, *args):
-        """ param args is a list of arguments (CwlArgument()) """
-        for argObject in args:
-            self.arguments.append(clean_null_values(argObject.__dict__))
-
-    def object2output(self, *args):
-        """ param args is a list of output ports (CwlOutput()) """
-        for outputObject in args:
-            self.outputs.append(clean_null_values(outputObject.__dict__))
 
 class CwlInput:
     """ CWL Input Port """
@@ -227,26 +227,31 @@ if __name__ == "__main__":
     tool.add_base_command("python test.py")
     tool.add_docker(dockerPull="ubuntu:latest")
     tool.add_stdout("$job.inputs.maybe.path + '.txt'")
-    tool.add_computational_requirements(cpu="$job.inputs.maybe.size", mem=2000)
+    tool.add_computational_requirements(cpu="$job.inputs.yes[0]", mem=2000)
 
     # add input ports
-    input1 = CwlInput(id="yes", type="array", items="int", required=False, prefix="-y")
-    input2 = CwlInput(id="no", type="enum", symbols=["nope", "nuhhuh"], required=True, prefix="-n")
-    input3 = CwlInput(id="maybe", type="File", prefix="-m", secondaryFiles=["^.bai", "$job.bai"])
-    tool.object2input(input1)
-    tool.object2input(input2)
-    tool.object2argument(input3)
+    input1 = CwlInput(id="#yes", type="array", items="int", required=False, prefix="-y")
+    input2 = CwlInput(id="#no", type="enum", symbols=["nope", "nuhhuh"], required=True, prefix="-n")
+    input3 = CwlInput(id="#maybe", type="File", prefix="-m", secondaryFiles="^.bai")
+    tool.add_input_port(input1)
+    tool.add_input_port(input2)
+    tool.add_input_port(input3)
 
     # add arguments
     argument1 = CwlArgument(prefix="-r", valueFrom=30, separate=True, position=1)
     argument2 = CwlArgument(valueFrom="--verbose", position=99)
-    tool.object2argument(argument1)
-    tool.object2argument(argument2)
+    tool.add_argument(argument1)
+    tool.add_argument(argument2)
 
     # add output ports
-    tool.object2output(CwlOutput(id="no", type="File", required=False, glob="*.txt"))
+    tool.add_output_port(CwlOutput(id="#sure", type="File", required=False, glob="*.txt", secondaryFiles=["^.bai", "^.txt"]))
 
     # pretty print to console
     print(tool.object2json())
 
     # To run: python py2cwl.py | json2yaml
+
+    """
+        Next steps:
+            - Create File requirement (possible import from local machine?)
+    """
