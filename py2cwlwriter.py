@@ -128,21 +128,24 @@ class CwlTool:
 
 class CwlInput:
     """ CWL Input Port """
-    def __init__(self, id, type, items=None, symbols=None, required=True, label=None, description=None, prefix=None, separate=True, position=0, valueFrom=None):
+    def __init__(self, id, type, items=None, symbols=None, required=True,
+                       label=None, description=None, prefix=None,
+                       separate=True, position=0, valueFrom=None, secondaryFiles=[]):
         self.id = check_id_hash(id)
-        if required: self.type = [type_parser(type, id, items, symbols)]
-        else: self.type = ["null", type_parser(type, id, items, symbols)]
-        self.required = required
+        self.type = [type_parser(type, id, items, symbols)]
+        if not required: self.type.insert(0, "null")
         self.label = label
         self.description = description
-        if prefix: self.create_input_binding(prefix, separate, position)
+        if prefix: self.create_input_binding(prefix, separate, position, secondaryFiles)
         if valueFrom: self.valueFrom = expression_check(valueFrom)
 
-    def create_input_binding(self, prefix, separate, position, cmdInclude=True):
+    def create_input_binding(self, prefix, separate, position, secondaryFiles, cmdInclude=True):
         self.inputBinding = Bindings()
         self.inputBinding.prefix = prefix
         self.inputBinding.separate = separate
         self.inputBinding.position = position
+        if not isinstance(secondaryFiles, list): secondaryFiles = [secondaryFiles]
+        self.inputBinding.secondaryFiles = [expression_check(value) for value in secondaryFiles]
         self.inputBinding.sbg_cmdInclude = cmdInclude # include by default, later can inject javascript expression
 
 class CwlOutput:
@@ -150,23 +153,24 @@ class CwlOutput:
     CWL Output Port
     required fields: id, type, glob
     to glob an array, set type=array and give the "items" (e.g. type="array", items="File" for array of files)
+    see the "type_parser" method for how types, items, and symbols are handled
     """
-    def __init__(self, id, type, glob, items=None, symbols=None, required=True, label=None, description=None, fileTypes=None, outputEval=None):
+    def __init__(self, id, type, glob, items=None, symbols=None, required=True, label=None,
+                       description=None, fileTypes=None, outputEval=None, secondaryFiles=[]):
         self.id = check_id_hash(id)
-        # if required: self.type = [str(type)]
-        # else: self.type = ["null", str(type)]
-        if required: self.type = [type_parser(type, id, items, symbols)]
-        else: self.type = ["null", type_parser(type, id, items, symbols)]
-        self.create_output_binding(glob, outputEval)
-        self.required = required
+        self.type = [type_parser(type, id, items, symbols)]
+        if not required: self.type.insert(0, "null")
+        self.create_output_binding(glob, outputEval, secondaryFiles)
         self.label = label
         self.description = description
         self.fileTypes = fileTypes
 
-    def create_output_binding(self, glob, outputEval):
+    def create_output_binding(self, glob, outputEval, secondaryFiles):
         self.outputBinding = Bindings()
         self.outputBinding.glob = expression_check(glob)
         if outputEval: self.outputBinding.outputEval = expression_check(outputEval)
+        if not isinstance(secondaryFiles, list): secondaryFiles = [secondaryFiles]
+        if secondaryFiles: self.outputBinding.secondaryFiles = [expression_check(value) for value in secondaryFiles]
 
 class CwlArgument:
     """ CWL Arguments """
@@ -223,13 +227,15 @@ if __name__ == "__main__":
     tool.add_base_command("python test.py")
     tool.add_docker(dockerPull="ubuntu:latest")
     tool.add_stdout("$job.inputs.maybe.path + '.txt'")
-    tool.add_computational_requirements(cpu="$job.inputs.maybe.size")
+    tool.add_computational_requirements(cpu="$job.inputs.maybe.size", mem=2000)
 
     # add input ports
-    input1 = CwlInput(id="yes", type="record", required=False, prefix="-y")
-    input2 = CwlInput(id="maybe", type="File", prefix="-m")
+    input1 = CwlInput(id="yes", type="array", items="int", required=False, prefix="-y")
+    input2 = CwlInput(id="no", type="enum", symbols=["nope", "nuhhuh"], required=True, prefix="-n")
+    input3 = CwlInput(id="maybe", type="File", prefix="-m", secondaryFiles=["^.bai", "$job.bai"])
     tool.object2input(input1)
     tool.object2input(input2)
+    tool.object2argument(input3)
 
     # add arguments
     argument1 = CwlArgument(prefix="-r", valueFrom=30, separate=True, position=1)
@@ -238,14 +244,9 @@ if __name__ == "__main__":
     tool.object2argument(argument2)
 
     # add output ports
-    tool.object2output(CwlOutput(id="no", type="File", glob="*.txt"))
+    tool.object2output(CwlOutput(id="no", type="File", required=False, glob="*.txt"))
 
     # pretty print to console
     print(tool.object2json())
 
     # To run: python py2cwl.py | json2yaml
-
-    """
-    Left to do:
-    - secondary files
-    """
