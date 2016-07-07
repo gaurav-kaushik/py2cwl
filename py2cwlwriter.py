@@ -148,7 +148,7 @@ class CwlTool:
 
 class CwlInput:
     """ CWL Input Port """
-    def __init__(self, id, type, required=True, label=None, description=None, prefix=None, separate=True, position=0):
+    def __init__(self, id, type, required=True, label=None, description=None, prefix=None, separate=True, position=0, valueFrom=None):
         self.id = check_id_hash(id)
         if required: self.type = [str(type)] # will change this later to handle arrays
         else: self.type = ["null", str(type)]
@@ -156,6 +156,7 @@ class CwlInput:
         self.label = label
         self.description = description
         if prefix: self.create_input_binding(prefix, separate, position)
+        if valueFrom: self.valueFrom = self.expression_check(valueFrom)
 
     def create_input_binding(self, prefix, separate, position, cmdInclude=True):
         self.inputBinding = Bindings()
@@ -164,9 +165,16 @@ class CwlInput:
         self.inputBinding.position = position
         self.inputBinding.sbg_cmdInclude = cmdInclude # include by default, later can inject javascript expression
 
+    def expression_check(self, value):
+        # check if any js-triggering chars are in your value and return appropriate dict if so
+        if any(marker in str(value) for marker in ["'", "$", "."]):
+            return {"class": "Expression", "engine": "#cwl-js-engine", "script": value}
+        else:
+            return value
+
 class CwlOutput:
     """ CWL Output Port """
-    def __init__(self, id, type, glob, required=True, label=None, description=None):
+    def __init__(self, id, type, glob, required=True, label=None, description=None, fileTypes=None):
         self.id = check_id_hash(id)
         if required: self.type = [str(type)] # will change this later to handle arrays
         else: self.type = ["null", str(type)]
@@ -174,10 +182,21 @@ class CwlOutput:
         self.required = required
         self.label = label
         self.description = description
+        self.fileTypes = fileTypes
 
     def create_output_binding(self, glob):
         self.outputBinding = Bindings()
-        self.outputBinding.glob = glob
+        self.outputBinding.glob = self.expression_check(glob)
+
+    def expression_check(self, value):
+        # check if any js-triggering chars are in your value and return appropriate dict if so
+        if any(marker in str(value) for marker in ["'", "$", "."]):
+            return {"class": "Expression", "engine": "#cwl-js-engine", "script": value}
+        else:
+            return value
+
+    def array_check(self):
+        return # fill in return dict for array
 
 class CwlArgument:
     """ CWL Arguments """
