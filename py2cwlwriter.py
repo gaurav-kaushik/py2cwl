@@ -64,15 +64,11 @@ class CwlTool:
         self.hints.append(docker.copy())
 
     def add_cpu(self, value):
-        cpu = dict()
-        cpu["class"] = "sbg:CPURequirement"
-        cpu["value"] = self.expression_check(value)
+        cpu = {"class": "sbg:CPURequirement", "value": self.expression_check(value)}
         self.hints.append(cpu.copy())
 
     def add_mem(self, value):
-        mem = dict()
-        mem["class"] = "sbg:MemRequirement"
-        mem["value"] = self.expression_check(value)
+        mem = {"class": "sbg:MemRequirement", "value": self.expression_check(value)}
         self.hints.append(mem.copy())
 
     def add_aws_instance(self, value):
@@ -94,15 +90,9 @@ class CwlTool:
         # ensure that the appropriate requirements for having expressions exists
         self.requirements_check()
 
-        # Including any of these chars will trigger an expression
-        expression_markers = ["'", "$", "."]
-        print("The value is:" + str(value))
-        if any(marker in str(value) for marker in expression_markers):
-            new_value = dict()
-            new_value["class"] = "Expression"
-            new_value["engine"] = "#cwl-js-engine"
-            new_value["script"] = value
-            return new_value
+        # check if any js-triggering chars are in your value and return appropriate dict if so
+        if any(marker in str(value) for marker in ["'", "$", "."]):
+            return {"class": "Expression", "engine": "#cwl-js-engine", "script": value}
         else:
             return value
         # Different ways the expression engine is triggered
