@@ -128,10 +128,10 @@ class CwlTool:
 
 class CwlInput:
     """ CWL Input Port """
-    def __init__(self, id, type, required=True, label=None, description=None, prefix=None, separate=True, position=0, valueFrom=None):
+    def __init__(self, id, type, items=None, symbols=None, required=True, label=None, description=None, prefix=None, separate=True, position=0, valueFrom=None):
         self.id = check_id_hash(id)
-        if required: self.type = [str(type)] # will change this later to handle arrays
-        else: self.type = ["null", str(type)]
+        if required: self.type = [type_parser(type, id, items, symbols)]
+        else: self.type = ["null", type_parser(type, id, items, symbols)]
         self.required = required
         self.label = label
         self.description = description
@@ -146,11 +146,17 @@ class CwlInput:
         self.inputBinding.sbg_cmdInclude = cmdInclude # include by default, later can inject javascript expression
 
 class CwlOutput:
-    """ CWL Output Port """
-    def __init__(self, id, type, glob, required=True, label=None, description=None, fileTypes=None, outputEval=None):
+    """
+    CWL Output Port
+    required fields: id, type, glob
+    to glob an array, set type=array and give the "items" (e.g. type="array", items="File" for array of files)
+    """
+    def __init__(self, id, type, glob, items=None, symbols=None, required=True, label=None, description=None, fileTypes=None, outputEval=None):
         self.id = check_id_hash(id)
-        if required: self.type = [str(type)] # will change this later to handle arrays
-        else: self.type = ["null", str(type)]
+        # if required: self.type = [str(type)]
+        # else: self.type = ["null", str(type)]
+        if required: self.type = [type_parser(type, id, items, symbols)]
+        else: self.type = ["null", type_parser(type, id, items, symbols)]
         self.create_output_binding(glob, outputEval)
         self.required = required
         self.label = label
@@ -161,9 +167,6 @@ class CwlOutput:
         self.outputBinding = Bindings()
         self.outputBinding.glob = expression_check(glob)
         if outputEval: self.outputBinding.outputEval = expression_check(outputEval)
-
-    def array_check(self):
-        return # fill in return dict for array
 
 class CwlArgument:
     """ CWL Arguments """
@@ -182,8 +185,20 @@ def clean_null_values(input_dict):
     return input_dict
 
 def check_id_hash(id):
-    if id.startswith('#'): return id
-    else: return '#' + id
+    if id.startswith("#"): return id
+    else: return "#" + id
+
+def drop_hash(id):
+    if id.startswith("#"): return id[1:]
+    else: return id
+
+def type_parser(type, id, items="File", symbols=[]):
+    """ Check the type and parse appropriately """
+    # note that complex arrays (e.g. arrays of enum) are not elegantly handled yet
+    if type == "array": return {"type":"array", "items":items, "name":drop_hash(id)}
+    elif type == "enum": return {"type":"enum", "symbols":symbols, "name":drop_hash(id)}
+    elif type == "record": return {"type":"record", "fields":[], "name":drop_hash(id)}
+    else: return str(type)
 
 def expression_check(value, triggers=["'", "$"]):
     """
@@ -211,7 +226,7 @@ if __name__ == "__main__":
     tool.add_computational_requirements(cpu="$job.inputs.maybe.size")
 
     # add input ports
-    input1 = CwlInput(id="yes", type="boolean", required=False, prefix="-y")
+    input1 = CwlInput(id="yes", type="record", required=False, prefix="-y")
     input2 = CwlInput(id="maybe", type="File", prefix="-m")
     tool.object2input(input1)
     tool.object2input(input2)
@@ -232,7 +247,5 @@ if __name__ == "__main__":
 
     """
     Left to do:
-    - array checking
     - secondary files
-    - check complex IO types (enum, record, etc)
     """
