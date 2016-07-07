@@ -24,6 +24,7 @@ class CwlTool:
         self.baseCommand = []
 
         # misc
+        self.requirements = [] # double-check that this can be imported as an empty list and doesn't need to be ""
         self.successCodes = []
         self.temporaryFailCodes = []
         self.hints = []
@@ -56,18 +57,22 @@ class CwlTool:
 
     def add_base_command(self, base=None):
         self.baseCommand = base.split()
+        # consider changing input type to list of strings to make it easier to check for expressions
 
     def add_docker(self, dockerPull, dockerImageID=None):
         docker = {"class": "DockerRequirement", "dockerPull": dockerPull, "dockerImageID": dockerImageID}
         self.hints.append(docker.copy())
 
     def add_cpu(self, value):
-        cpu = {"class": "sbg:CPURequirement", "value": value}
+        cpu = dict()
+        cpu["class"] = "sbg:CPURequirement"
+        cpu["value"] = self.expression_check(value)
         self.hints.append(cpu.copy())
 
     def add_mem(self, value):
-        mem = {"class": "sbg:MemRequirement", "value": value}
-        mem["value"] = value
+        mem = dict()
+        mem["class"] = "sbg:MemRequirement"
+        mem["value"] = self.expression_check(value)
         self.hints.append(mem.copy())
 
     def add_aws_instance(self, value):
@@ -75,9 +80,46 @@ class CwlTool:
         self.hints.append(aws.copy())
 
     def add_computational_requirements(self, cpu=1, mem=1000, aws=None):
-        self.add_cpu(value=cpu)
-        self.add_mem(value=mem)
-        if aws: self.add_aws_instance(value=aws)
+        self.add_cpu(cpu)
+        self.add_mem(mem)
+        if aws: self.add_aws_instance(aws)
+
+    def add_stdin(self, stdin):
+        self.stdin = self.expression_check(stdin)
+
+    def add_stdout(self, stdout):
+        self.stdout = self.expression_check(stdout)
+
+    def expression_check(self, value):
+        # ensure that the appropriate requirements for having expressions exists
+        self.requirements_check()
+
+        # Including any of these chars will trigger an expression
+        expression_markers = ["'", "$", "."]
+        print("The value is:" + str(value))
+        if any(marker in str(value) for marker in expression_markers):
+            new_value = dict()
+            new_value["class"] = "Expression"
+            new_value["engine"] = "#cwl-js-engine"
+            new_value["script"] = value
+            return new_value
+        else:
+            return value
+        # Different ways the expression engine is triggered
+        #   the value for the key becomes the "new_value" dict
+        #      e.g. stdin/out, output glob, file content, filename, components of the base command
+        #   a 'class' has a 'value' that becomes the "new_value" dict
+        #       e.g. in hints
+        #   a 'class' has a 'valueFrom' that becomes the "new_value" dict
+        #       e.g. input ports
+
+    def requirements_check(self):
+        if not self.requirements:
+            expr_reqs = dict()
+            expr_reqs["class"] = "ExpressionEngineRequirement"
+            expr_reqs["id"] = "#cwl-js-engine"
+            expr_reqs["requirements"] = [{"class": "DockerRequirement", "dockerPull": "rabix/js-engine"}]
+            self.requirements.append(expr_reqs)
 
     def object2json(self):
         """
@@ -86,7 +128,7 @@ class CwlTool:
         data = json.dumps(self, default=lambda o: clean_null_values(o.__dict__),
                                 sort_keys=True, skipkeys=True, indent=2)
         data = data.replace("class_", "class")
-        data = data.replace("sbg_cmdInclude", "sbg:cmdInclude")
+        data = data.replace("sbg_cmdInclude", "sbg:cmdInclude") # consider generalizing to sbg_ -> sbg:
         return data
 
     def object2yaml(self):
@@ -174,6 +216,8 @@ if __name__ == "__main__":
     tool = CwlTool(id="test_tool", author="gaurav", label="testing123")
     tool.add_base_command("python test.py")
     tool.add_docker(dockerPull="ubuntu:latest")
+    tool.add_stdout("$job.inputs.maybe.path + '.txt'")
+    tool.add_computational_requirements(cpu="$job.inputs.maybe.size")
 
     # add input ports
     input1 = CwlInput(id="yes", type="boolean", required=False, prefix="-y")
