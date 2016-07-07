@@ -174,19 +174,20 @@ class CwlInput:
 
 class CwlOutput:
     """ CWL Output Port """
-    def __init__(self, id, type, glob, required=True, label=None, description=None, fileTypes=None):
+    def __init__(self, id, type, glob, required=True, label=None, description=None, fileTypes=None, outputEval=None):
         self.id = check_id_hash(id)
         if required: self.type = [str(type)] # will change this later to handle arrays
         else: self.type = ["null", str(type)]
-        self.create_output_binding(glob)
+        self.create_output_binding(glob, outputEval)
         self.required = required
         self.label = label
         self.description = description
         self.fileTypes = fileTypes
 
-    def create_output_binding(self, glob):
+    def create_output_binding(self, glob, outputEval):
         self.outputBinding = Bindings()
         self.outputBinding.glob = self.expression_check(glob)
+        if outputEval: self.outputBinding.outputEval = self.expression_check(outputEval)
 
     def expression_check(self, value):
         # check if any js-triggering chars are in your value and return appropriate dict if so
