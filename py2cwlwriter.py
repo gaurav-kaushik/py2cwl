@@ -116,13 +116,12 @@ class CwlTool:
 class CwlInput:
     """ CWL Input Port """
     def __init__(self, id, type, required=True, label=None, description=None, prefix=None, separate=True, position=0):
-        self.id = id
+        self.id = check_id_hash(id)
+        if required: self.type = [str(type)] # will change this later to handle arrays
+        else: self.type = ["null", str(type)]
         self.required = required
         self.label = label
         self.description = description
-        if required: self.type = [str(type)] # will change this later to handle arrays
-        else: self.type = ["null", str(type)]
-
         if prefix: self.create_input_binding(prefix, separate, position)
 
     def create_input_binding(self, prefix, separate, position, cmdInclude=True):
@@ -134,14 +133,14 @@ class CwlInput:
 
 class CwlOutput:
     """ CWL Output Port """
-    def __init__(self, id, type, required=True, label=None, description=None, glob=None):
-        self.id = id
+    def __init__(self, id, type, glob, required=True, label=None, description=None):
+        self.id = check_id_hash(id)
+        if required: self.type = [str(type)] # will change this later to handle arrays
+        else: self.type = ["null", str(type)]
+        self.create_output_binding(glob)
         self.required = required
         self.label = label
         self.description = description
-        if required: self.type = [str(type)] # will change this later to handle arrays
-        else: self.type = ["null", str(type)]
-        if glob: self.create_output_binding(glob)
 
     def create_output_binding(self, glob):
         self.outputBinding = Bindings()
@@ -162,6 +161,12 @@ def clean_null_values(input_dict):
         if v is None: del(input_dict[k])
         elif isinstance(v, dict): clean_null_values(v)
     return input_dict
+
+def check_id_hash(id):
+    if id.startswith('#'):
+        return id
+    else:
+        return '#' + id
 
 if __name__ == "__main__":
 
