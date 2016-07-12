@@ -129,7 +129,7 @@ class CwlTool:
 class CwlInput:
     """ CWL Input Port """
     def __init__(self, id, type, items=None, symbols=None, required=True,
-                       label=None, description=None, prefix=None,
+                       label=None, description=None, prefix=None, posCommand=False,
                        separate=True, position=0, valueFrom=None, secondaryFiles=[]):
         self.id = check_id_hash(id)
         self.type = [type_parser(type, id, items, symbols)]
@@ -137,6 +137,7 @@ class CwlInput:
         self.label = label
         self.description = description
         if prefix: self.create_input_binding(prefix, separate, position, secondaryFiles)
+        elif posCommand: self.create_input_binding("", False, position, secondaryFiles)
         if valueFrom: self.valueFrom = expression_check(valueFrom)
 
     def create_input_binding(self, prefix, separate, position, secondaryFiles, cmdInclude=True):
