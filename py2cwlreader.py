@@ -28,7 +28,6 @@ class CwlReader:
         else:
             print("Please input JSON or YAML")
 
-
 class Json(): pass
 class Yaml(): pass
 
@@ -40,6 +39,7 @@ if __name__ == "__main__":
 
     ## instantiate json file
     tool = CwlReader(in_json=args['json'], in_yaml=args['yaml'])
+    print(tool.Json.keys())
     # instantiate with json string
     # tool = CwlReader('{"Hello":"World", "inputs":[{"id":"yes"}]}')
 
@@ -56,5 +56,5 @@ if __name__ == "__main__":
     # try: print(vars(tool.Tool))
     # except: print("No Tool")
 
-    c = CwlTool(id="datboi", label="ohshitwaddup")
-    print(vars(c))
+    # c = CwlTool(id="datboi", label="ohshitwaddup")
+    # print(vars(c))
