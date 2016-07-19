@@ -16,30 +16,19 @@ def purify(input_dict):
     """
     app = input_dict
 
-    # 1. Empty the ids
-    app["id"], app["sbg:id"] = "-", "-"
+    # 1. Empty the id
+    app["id"] = "-"
 
     # 2. Remove any sbg-specific fields not in the whitelist. This is enough for tools.
-    field_whitelist = ["sbg:categories", "sbg:id", "sbg:toolAuthor", "sbg:toolkit"]
+    field_whitelist = ["sbg:categories", "sbg:id", "sbg:toolAuthor", "sbg:toolkit", "sbg:id"]
     for k in app.keys():
-        if k.startswith("sbg:") and k not in field_whitelist:
-            app.pop(k)
+        if k.startswith("sbg:") and k not in field_whitelist: app.pop(k)
 
-    # 3. Workflows are more complicated. They have some extensions with are required for proper importing and saving.
-    #       In the case of workflow:
-    #           1. Check that it's a workflow (should have the "steps" key)
-    #           2. Remove any "sbg:" fields from "run" subfield
-    if "steps" in app:
-        for idx, values in enumerate(app["steps"]):
-            for step_key in values.keys():
-                if step_key.startswith("run"):
-                    for run_key in values["run"].keys():
-                        if run_key.startswith("sbg:"):
-                            app["steps"][idx]["run"].pop(str(run_key))
-                        if run_key.startswith("id"):
-                            app["steps"][idx]["run"]["id"] = ""
+    # 3. For workflows, recursively purify apps in the "run" key of the "steps" key
+    for s in app.get('steps', []):
+        if 'run' in s: s['run'] = purify(s['run'])
+
     return app
-
 
 def object2json(input_app):
     """
