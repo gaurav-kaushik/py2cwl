@@ -5,7 +5,7 @@ from py2cwlreader import CwlReader
 from py2cwlwriter import clean_null_values
 
 
-def purify(input_dict):
+def purify(input_dict, recursion=True):
     """
     :param input_dict: input JSON file
     This will do some checks to purify a CWL JSON file pulled from the platform.
@@ -25,8 +25,9 @@ def purify(input_dict):
         if k.startswith("sbg:") and k not in field_whitelist: app.pop(k)
 
     # 3. For workflows, recursively purify apps in the "run" key of the "steps" key
-    for s in app.get('steps', []):
-        if 'run' in s: s['run'] = purify(s['run'])
+    if recursion:
+        for s in app.get('steps', []):
+            if 'run' in s: s['run'] = purify(s['run'])
 
     return app
 
@@ -47,6 +48,7 @@ def save_app(app, output_filename=None):
         print("Purified file saved at: " + args_file)
     else:
         print(object2json(app))
+    return args_file
 
 
 if __name__ == "__main__":
@@ -54,13 +56,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-j", "--json", default=None, help="Specify path to CWL file")
     parser.add_argument("-o", "--output", default=None, help="Redirect to an output file (ext: .cwl)")
+    parser.add_argument("-r", "--recursive", action="store_true", default=True, help="Choose whether to delete app history from workflows")
     args = parser.parse_args()
+
     args_json = args.json
     args_output = args.output
+    args_recursive = args.recursive
 
     # purify the CWL application
     input_json = CwlReader(in_json=args_json)
     app_dict = input_json.Tool.__dict__
-    save_app(purify(app_dict), args_output)
+    save_app(purify(app_dict, args_recursive), args_output)
 
     # Usage: python purifyCWL.py -j <input.json> -o <output_filename>

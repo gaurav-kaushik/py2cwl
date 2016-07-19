@@ -91,10 +91,20 @@ class sevenBridges:
         return
 
     def transfer_clean_apps(self, project_old, project_new):
-        # TODO: allow transfer of all apps to a new project.
-        # TODO: allow transfer without saving locally.
-        self.download_clean_apps_from_project(project_old, save=True)
-
+        """
+        :param project: str of project name, e.g. 'dream-project'
+        :param fileNames: arr of filenames, size of list of apps in project
+        """
+        apps = self.api.apps.query(project_old)._items
+        for idx, app in enumerate(apps):
+            try:
+                pure_app = purifyCWL.purify(app.raw, recursion=True)
+                pure_app_name = app.name.lower().replace (" ", "_")
+                pure_app_filename = purifyCWL.save_app(pure_app, pure_app_name) # will route to file is save=True else prints
+                self.add_app_to_project(project_id=project_new, app_name=pure_app_name, app_file=pure_app_filename)
+            except:
+                print("Either there is a duplicate file or you do not have permissions to copy to " + project_new)
+                continue
         return
 
 if __name__ == "__main__":
@@ -102,3 +112,4 @@ if __name__ == "__main__":
     # s.download_clean_apps_from_project(project='gauravCGC/dream-project', save=True)
     # s.api.apps.install_app('gauravCGC/dream-project-open/test', raw=CwlReader(in_json=open('tophat2.cwl','r')))
     # s.add_app_to_project(project_id="gauravCGC/dream-project-open", app_name="tophat_test", app_file="tophat2.cwl")
+    s.transfer_clean_apps("gauravADMIN/dream-tool-repo", "gauravCGC/icgc-tcga-dream-somatic-mutation-calling-challenge-rna")
