@@ -4,9 +4,10 @@ import json
 from py2cwlreader import CwlReader
 from py2cwlwriter import clean_null_values
 
+
 def purify(input_dict):
     """
-    :param file: input JSON file
+    :param input_dict: input JSON file
     This will do some checks to purify a CWL JSON file pulled from the platform.
     Now you can easily share externally (e.g. on GitHub) or add to other projects without links.
     Note the following:
@@ -39,12 +40,25 @@ def purify(input_dict):
                             app["steps"][idx]["run"]["id"] = ""
     return app
 
+
 def object2json(input_app):
-    """ methods to clean up the object when converting to JSON """
-    app = json.dumps(input_app, default=lambda o: clean_null_values(o.__dict__),
-                            sort_keys=True, skipkeys=True, indent=2)
+    """
+    :param input_app: takes an app object and converts to JSON
+    """
+    app = json.dumps(input_app, default=lambda o: clean_null_values(o.__dict__), sort_keys=True,
+                     skipkeys=True, indent=2)
     app = app.replace("class_", "class")
     return app
+
+def save_app(app, output_filename=None):
+    if output_filename:
+        args_file = output_filename + ".cwl"
+        with open(args_file, "w") as output:
+            print(object2json(app), file=output)
+        print("Purified file saved at: " + args_file)
+    else:
+        print(object2json(app))
+
 
 if __name__ == "__main__":
     # parse those args
@@ -53,17 +67,9 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output", default=None, help="Redirect to an output file (ext: .cwl)")
     args = parser.parse_args()
     args_json = args.json
+    args_output = args.output
 
     # purify the CWL application
-    input_app = CwlReader(in_json=args_json)
-    app_dict = input_app.Tool.__dict__
-    purified_app = purify(app_dict)
-
-    # save if desired or print to console
-    if args.output:
-        args_file = args.output + ".cwl"
-        with open(args_file, "w") as output:
-            print(object2json(purified_app), file=output)
-        print("Purified file saved at: " + args_file)
-    else:
-        print(object2json(purified_app))
+    input_json = CwlReader(in_json=args_json)
+    app_dict = input_json.Tool.__dict__
+    save_app(purify(app_dict), args_output)
