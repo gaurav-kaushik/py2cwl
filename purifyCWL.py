@@ -73,3 +73,5 @@ if __name__ == "__main__":
     input_json = CwlReader(in_json=args_json)
     app_dict = input_json.Tool.__dict__
     save_app(purify(app_dict), args_output)
+
+    # Usage: python purifyCWL.py -j <input.json> -o <output_filename>
