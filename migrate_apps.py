@@ -1,6 +1,6 @@
 from __future__ import print_function
 import argparse
-import sbgapitools as sbtools
+import sbgapitools
 
 if __name__ == "__main__":
     # parse those args
@@ -10,6 +10,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args_in = args.input_project
     args_out = args.output_project
-    s = sbtools()
-    s.transfer_clean_apps(args_in, args_out)
+    sbgapitools.transfer_clean_apps(args_in, args_out)
 

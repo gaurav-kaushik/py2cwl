@@ -82,7 +82,6 @@ class sevenBridges:
         return
 
     def add_app_to_project(self, project_id, app_name, app_file):
-        # TODO: add array of apps instead of general list
         with open(app_file, "r") as a:
             app = json.load(a)
         self.api.apps.install_app(str(project_id + "/" + app_name), raw=app)
